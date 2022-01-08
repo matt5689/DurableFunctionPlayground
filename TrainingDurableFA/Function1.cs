@@ -6,6 +6,7 @@ using Microsoft.Azure.WebJobs.Extensions.DurableTask;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Azure.WebJobs.Host;
 using Microsoft.Extensions.Logging;
+using System.Threading.Tasks;
 
 namespace TrainingDurableFA
 {
@@ -17,12 +18,8 @@ namespace TrainingDurableFA
         {
             var outputs = new List<string>();
 
-            // Replace "hello" with the name of your Durable Activity Function.
             outputs.Add(await context.CallActivityAsync<string>("Function1_Hello", "Tokyo"));
-            //outputs.Add(await context.CallActivityAsync<string>("Function1_Hello", "Seattle"));
-            //outputs.Add(await context.CallActivityAsync<string>("Function1_Hello", "London"));
 
-            // returns ["Hello Tokyo!", "Hello Seattle!", "Hello London!"]
             return outputs;
         }
 
@@ -35,6 +32,37 @@ namespace TrainingDurableFA
 
         [FunctionName("Function1_HttpStart")]
         public static async Task<HttpResponseMessage> HttpStart(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post")] HttpRequestMessage req,
+            [DurableClient(ConnectionName = "orchclieconn", ExternalClient = true, TaskHub = "TestHubName")] IDurableOrchestrationClient starter,
+            ILogger log)
+        {
+            // Function input comes from the request content.
+            string instanceId = await starter.StartNewAsync("Function1", null);
+
+            log.LogInformation($"Started orchestration with ID = '{instanceId}'.");
+
+            log.LogInformation("Calling second http starter");
+
+            var client = new HttpClient();
+
+            var msg = new HttpRequestMessage()
+            {
+                Method = HttpMethod.Get,
+                RequestUri = new System.Uri(@"http://localhost:7071/api/Function2_HttpStart")
+            };
+
+            HttpResponseMessage response = new HttpResponseMessage();
+
+            await Task.Factory.StartNew(async () =>
+            {
+                response = await client.SendAsync(msg);
+            });
+
+            return starter.CreateCheckStatusResponse(req, instanceId);
+        }
+
+        [FunctionName("Function2_HttpStart")]
+        public static async Task<HttpResponseMessage> HttpStart2(
             [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post")] HttpRequestMessage req,
             [DurableClient] IDurableOrchestrationClient starter,
             ILogger log)
