@@ -1,11 +1,44 @@
 {
-    "version": "2.0",
-    "logging": {
-        "applicationInsights": {
-            "samplingSettings": {
-                "isEnabled": true,
-                "excludedTypes": "Request"
-            }
-        }
+  "version": "2.0",
+  "extensions": {
+    "durableTask": {
+      "hubName": "TestHubName2",
+      "storageProvider": {
+        "connectionStringName": "AzureWebJobsStorage",
+        "controlQueueBatchSize": 1,
+        "controlQueueBufferThreshold": 1,
+        "controlQueueVisibilityTimeout": "00:05:00",
+        "maxQueuePollingInterval": "01:00:30",
+        "partitionCount": 1
+      },
+      "tracing": {
+        "traceInputsAndOutputs": false,
+        "traceReplayEvents": false
+      },
+      "maxConcurrentActivityFunctions": 1,
+      "maxConcurrentOrchestratorFunctions": 1,
+      "extendedSessionsEnabled": false,
+      "extendedSessionIdleTimeoutInSeconds": 30,
+      "useAppLease": true,
+      "useGracefulShutdown": false
     }
+  },
+  "logging": {
+    "fileLoggingMode": "always",
+    "console": {
+      "isEnabled": "true"
+    },
+    "logLevel": {
+      "default": "Information",
+      "Host.Results": "Information",
+      "Function": "Information",
+      "Host.Aggregator": "Information"
+    },
+    "applicationInsights": {
+      "samplingExcludedTypes": "Request",
+      "samplingSettings": {
+        "isEnabled": true
+      }
+    }
+  }
 }
